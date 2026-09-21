@@ -1,0 +1,39 @@
+SPRINTWISE AI ARCHITECTURE
+
+                +----------------------+
+                |   Sprint Data / CSV  |
+                +----------+-----------+
+                           |
+                           v
+                +----------------------+
+                | Data Preprocessing   |
+                | Cleaning + Metrics   |
+                +----------+-----------+
+                           |
+                           v
+                +----------------------+
+                | Feature Engineering  |
+                | Completion, Velocity |
+                | Bugs, Blockers        |
+                +----------+-----------+
+                           |
+                           v
+                +----------------------+
+                | AI Risk Prediction    |
+                | Random Forest Model   |
+                +----------+-----------+
+                           |
+              +------------+-------------+
+              |                          |
+              v                          v
+      +---------------+          +----------------+
+      | Risk Level    |          | Recommendations|
+      | Low/Medium/High|         | AI-style advice|
+      +-------+-------+          +--------+-------+
+              |                           |
+              +-------------+-------------+
+                            v
+                  +----------------------+
+                  | Streamlit Dashboard  |
+                  | Charts + KPIs + CSV  |
+                  +----------------------+
