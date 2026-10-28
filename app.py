@@ -1,16 +1,20 @@
-import numpy as np
-import pandas as pd
-import plotly.express as px
-import streamlit as st
 
+import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.express as px
+
+# =========================================================
+# PAGE CONFIGURATION
+# =========================================================
 st.set_page_config(
-    page_title="SprintWise AI | Sprint Intelligence",
+    page_title="SprintWise AI | Analytics",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-REQUIRED_COLUMNS = [
+REQUIRED = [
     "Sprint",
     "Planned_Story_Points",
     "Completed_Story_Points",
@@ -19,1146 +23,741 @@ REQUIRED_COLUMNS = [
     "Bugs",
     "Blocked_Tasks",
 ]
-NUMERIC_COLUMNS = REQUIRED_COLUMNS[1:]
-RISK_ORDER = ["Low", "Medium", "High"]
+
+NUMERIC = REQUIRED[1:]
 RISK_COLORS = {
-    "Low": "#16A085",
-    "Medium": "#E6A23C",
-    "High": "#E05D5D",
+    "Low": "#35D0A0",
+    "Medium": "#F6BD60",
+    "High": "#FF6B81",
 }
 
-
-# ============================== PREMIUM DESIGN ==============================
-
-st.markdown(
-    """
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
-
-    html, body, [class*="css"] {
-        font-family: 'DM Sans', sans-serif;
-    }
-
-    .stApp {
-        background: #F5F7FB;
-    }
-
-    [data-testid="stHeader"] {
-        background: rgba(245,247,251,.92);
-    }
-
-    [data-testid="stSidebar"] {
-        background: #FFFFFF;
-        border-right: 1px solid #E7ECF3;
-    }
-
-    .block-container {
-        max-width: 1500px;
-        padding-top: 1.7rem;
-        padding-bottom: 3rem;
-    }
-
-    h1, h2, h3 {
-        font-family: 'Manrope', sans-serif !important;
-        color: #17233C;
-        letter-spacing: -.025em;
-    }
-
-    h1, h2, h3 {
-        font-weight: 800 !important;
-    }
-
-    p, label {
-        color: #52617A;
-    }
-
-    [data-testid="stMetric"] {
-        background: #FFFFFF;
-        border: 1px solid #E7ECF3;
-        border-radius: 16px;
-        padding: 18px 20px;
-        box-shadow: 0 4px 18px rgba(30,50,90,.035);
-    }
-
-    [data-testid="stMetricLabel"] {
-        color: #71809A;
-        font-size: .83rem;
-        font-weight: 600;
-    }
-
-    [data-testid="stMetricValue"] {
-        color: #17233C;
-        font-family: 'Manrope', sans-serif;
-        font-weight: 800;
-    }
-
-    .hero {
-        background: linear-gradient(
-            120deg, #17233C 0%, #253E69 58%, #3B5D91 100%
-        );
-        border-radius: 22px;
-        padding: 30px 32px;
-        color: white;
-        margin-bottom: 22px;
-        box-shadow: 0 14px 32px rgba(27,47,82,.14);
-    }
-
-    .hero-kicker {
-        color: #AFC6F3;
-        text-transform: uppercase;
-        letter-spacing: .16em;
-        font-size: .72rem;
-        font-weight: 700;
-        margin-bottom: 9px;
-    }
-
-    .hero-title {
-        color: white;
-        font-family: 'Manrope', sans-serif;
-        font-size: 2.1rem;
-        line-height: 1.15;
-        font-weight: 800;
-        margin-bottom: 10px;
-    }
-
-    .hero-copy {
-        color: #D9E3F5;
-        font-size: 1rem;
-        margin: 0;
-        max-width: 850px;
-    }
-
-    .section-eyebrow {
-        color: #75849D;
-        text-transform: uppercase;
-        letter-spacing: .12em;
-        font-size: .7rem;
-        font-weight: 800;
-        margin-bottom: 4px;
-    }
-
-    .panel {
-        background: white;
-        border: 1px solid #E7ECF3;
-        border-radius: 16px;
-        padding: 18px 20px;
-        margin-bottom: 10px;
-        box-shadow: 0 4px 18px rgba(30,50,90,.025);
-    }
-
-    .panel-label {
-        color: #71809A;
-        font-size: .78rem;
-        font-weight: 700;
-        margin-bottom: 7px;
-    }
-
-    .panel-value {
-        color: #17233C;
-        font-family: 'Manrope', sans-serif;
-        font-size: 1.65rem;
-        font-weight: 800;
-    }
-
-    .pill {
-        display: inline-block;
-        border-radius: 999px;
-        padding: 5px 10px;
-        font-size: .76rem;
-        font-weight: 700;
-    }
-
-    .step-card {
-        background: #FFFFFF;
-        border: 1px solid #E7ECF3;
-        border-radius: 15px;
-        padding: 18px;
-        min-height: 130px;
-    }
-
-    .step-num {
-        display: inline-flex;
-        width: 29px;
-        height: 29px;
-        border-radius: 9px;
-        align-items: center;
-        justify-content: center;
-        background: #EAF0FC;
-        color: #315AA6;
-        font-weight: 800;
-        margin-bottom: 12px;
-    }
-
-    .step-title {
-        color: #17233C;
-        font-weight: 800;
-        margin-bottom: 5px;
-    }
-
-    .step-copy {
-        color: #71809A;
-        font-size: .84rem;
-    }
-
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-        border-bottom: 1px solid #E7ECF3;
-    }
-
-    .stTabs [data-baseweb="tab"] {
-        border-radius: 10px 10px 0 0;
-        padding: 12px 15px;
-        font-weight: 700;
-    }
-
-    .stTabs [aria-selected="true"] {
-        color: #315AA6 !important;
-    }
-
-    .stButton button, .stDownloadButton button {
-        border-radius: 10px;
-        font-weight: 700;
-    }
-
-    [data-testid="stFileUploader"] {
-        background: #F7F9FD;
-        border: 1px dashed #C9D5E8;
-        padding: 12px;
-        border-radius: 14px;
-    }
-
-    footer {
-        visibility: hidden;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-
-# ============================== DATA VALIDATION ==============================
-
-def validate_and_clean(raw):
-    errors = []
-    warnings = []
-
-    df = raw.copy()
-    df.columns = [str(c).strip() for c in df.columns]
-
-    missing = [
-        column for column in REQUIRED_COLUMNS
-        if column not in df.columns
-    ]
-
-    if missing:
-        return (
-            None,
-            ["Missing required columns: " + ", ".join(missing)],
-            warnings,
-        )
-
-    df = df[REQUIRED_COLUMNS].copy()
-
-    df["Sprint"] = df["Sprint"].astype("string").str.strip()
-
-    if df["Sprint"].isna().any() or df["Sprint"].eq("").any():
-        errors.append("Sprint names cannot be blank.")
-
-    if df["Sprint"].duplicated().any():
-        duplicates = (
-            df.loc[df["Sprint"].duplicated(), "Sprint"]
-            .astype(str)
-            .tolist()
-        )
-        errors.append(
-            "Sprint names must be unique. Duplicates: "
-            + ", ".join(duplicates)
-        )
-
-    for column in NUMERIC_COLUMNS:
-        df[column] = pd.to_numeric(df[column], errors="coerce")
-
-        if df[column].isna().any():
-            errors.append(
-                f"'{column}' contains blank or non-numeric values."
-            )
-        elif not np.isfinite(df[column].to_numpy(dtype=float)).all():
-            errors.append(f"'{column}' contains invalid numeric values.")
-        elif (df[column] < 0).any():
-            errors.append(f"'{column}' cannot contain negative values.")
-
-    if errors:
-        return None, errors, warnings
-
-    for column in NUMERIC_COLUMNS:
-        if not np.allclose(df[column], np.round(df[column])):
-            warnings.append(
-                f"'{column}' contains decimals; values were rounded."
-            )
-
-        df[column] = df[column].round().astype(int)
-
-    if (df["Planned_Story_Points"] <= 0).any():
-        errors.append("'Planned_Story_Points' must be greater than zero.")
-
-    if (df["Planned_Tasks"] <= 0).any():
-        errors.append("'Planned_Tasks' must be greater than zero.")
-
-    if (
-        df["Completed_Story_Points"] > df["Planned_Story_Points"]
-    ).any():
-        warnings.append(
-            "Some completed story points exceed planned points. "
-            "Please verify the data."
-        )
-
-    if (df["Completed_Tasks"] > df["Planned_Tasks"]).any():
-        warnings.append(
-            "Some completed task counts exceed planned task counts."
-        )
-
-    if (df["Blocked_Tasks"] > df["Planned_Tasks"]).any():
-        warnings.append(
-            "Some blocked-task counts exceed planned task counts."
-        )
-
-    if errors:
-        return None, errors, warnings
-
-    return df.reset_index(drop=True), errors, warnings
-
-
-# ============================== METRIC ENGINE ==============================
-
-def calculate_metrics(data):
-    df = data.copy()
-
-    df["Completion_%"] = (
-        df["Completed_Story_Points"]
-        / df["Planned_Story_Points"]
-        * 100
-    )
-
-    df["Task_Completion_%"] = (
-        df["Completed_Tasks"]
-        / df["Planned_Tasks"]
-        * 100
-    )
-
-    df["Velocity"] = df["Completed_Story_Points"]
-
-    df["Risk_Score"] = (
-        (100 - df["Completion_%"]).clip(lower=0) * 0.45
-        + df["Bugs"] * 4
-        + df["Blocked_Tasks"] * 6
-    ).clip(0, 100)
-
-    def risk_label(score):
-        if score >= 60:
-            return "High"
-        if score >= 35:
-            return "Medium"
-        return "Low"
-
-    df["Risk"] = df["Risk_Score"].apply(risk_label)
-
-    return df
-
-
-# ============================ RECOMMENDATION ENGINE ============================
-
-def recommendations_for(row, average_velocity):
-    recommendations = []
-
-    if row["Completion_%"] < 80:
-        recommendations.append((
-            "Delivery",
-            "Completion is below 80%. Review unfinished stories "
-            "and reconsider the sprint commitment."
-        ))
-
-    if row["Bugs"] >= 5:
-        recommendations.append((
-            "Quality",
-            "Bug count is elevated. Investigate recurring defects "
-            "and reserve capacity for fixes and regression testing."
-        ))
-
-    if row["Blocked_Tasks"] >= 3:
-        recommendations.append((
-            "Dependencies",
-            "Several tasks are blocked. Identify dependencies, "
-            "assign owners, and agree on resolution dates."
-        ))
-
-    if row["Velocity"] < average_velocity:
-        recommendations.append((
-            "Velocity",
-            "Velocity is below the selected sprint average. "
-            "Review capacity, unplanned work, and dependency delays."
-        ))
-
-    if row["Task_Completion_%"] < 80:
-        recommendations.append((
-            "Planning",
-            "Task completion is below 80%. Break large stories "
-            "into smaller tasks and clarify acceptance criteria."
-        ))
-
-    if not recommendations:
-        recommendations.append((
-            "Stable",
-            "Indicators are relatively stable. Continue monitoring "
-            "delivery, defects, and blockers."
-        ))
-
-    return recommendations
-
-
-# ================================ CHART STYLE ================================
-
-def chart_theme(fig, height=330):
-    fig.update_layout(
-        height=height,
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(
-            family="DM Sans, sans-serif",
-            color="#52617A",
-            size=12,
-        ),
-        margin=dict(l=8, r=8, t=48, b=8),
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="left",
-            x=0,
-        ),
-        xaxis=dict(showgrid=False, linecolor="#E7ECF3", title=None),
-        yaxis=dict(gridcolor="#EDF1F7", zeroline=False, title=None),
-        title=dict(
-            font=dict(
-                size=15,
-                color="#17233C",
-                family="Manrope, sans-serif",
-            )
-        ),
-    )
-    return fig
-
-
-# ================================= SIDEBAR =================================
-
+# =========================================================
+# PREMIUM DARK THEME
+# =========================================================
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root {
+    --bg: #080B14;
+    --surface: #101522;
+    --surface2: #151C2D;
+    --border: #252E43;
+    --text: #F1F5FF;
+    --muted: #95A2BB;
+    --violet: #8B7CFF;
+    --cyan: #42D9F4;
+}
+
+html, body, [class*="css"] {
+    font-family: 'DM Sans', sans-serif;
+}
+.stApp {
+    background: var(--bg);
+    color: var(--text);
+}
+[data-testid="stHeader"] {
+    background: rgba(8,11,20,.94);
+}
+[data-testid="stSidebar"] {
+    background: #0C101C;
+    border-right: 1px solid var(--border);
+}
+[data-testid="stSidebar"] * {
+    color: var(--text);
+}
+.block-container {
+    max-width: 1550px;
+    padding-top: 1.7rem;
+    padding-bottom: 3rem;
+}
+h1, h2, h3 {
+    font-family: 'Manrope', sans-serif !important;
+    color: var(--text) !important;
+    font-weight: 800 !important;
+    letter-spacing: -.03em;
+}
+p, label {
+    color: #C1CADB;
+}
+[data-testid="stMetric"] {
+    background: linear-gradient(145deg,#151C2D,#101522);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: 0 8px 26px rgba(0,0,0,.16);
+}
+[data-testid="stMetricLabel"] {
+    color: var(--muted) !important;
+    font-size: .82rem;
+    font-weight: 600;
+}
+[data-testid="stMetricValue"] {
+    color: #F5F7FF !important;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 800;
+}
+.hero {
+    background:
+      radial-gradient(ellipse at 90% 0%,rgba(139,124,255,.24),transparent 45%),
+      radial-gradient(ellipse at 0% 100%,rgba(66,217,244,.10),transparent 45%),
+      linear-gradient(135deg,#141A2B,#0E1320);
+    border: 1px solid #303751;
+    border-radius: 22px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+.eyebrow {
+    color: var(--cyan);
+    text-transform: uppercase;
+    letter-spacing: .15em;
+    font-size: .72rem;
+    font-weight: 800;
+    margin-bottom: 9px;
+}
+.hero-title {
+    color: #FFFFFF;
+    font-family: 'Manrope', sans-serif;
+    font-size: 2.4rem;
+    line-height: 1.15;
+    font-weight: 800;
+    margin-bottom: 12px;
+}
+.hero-copy {
+    color: #AEBBD2;
+    font-size: 1rem;
+    line-height: 1.7;
+    max-width: 850px;
+}
+.panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    padding: 18px;
+    margin-bottom: 12px;
+}
+.stTabs [data-baseweb="tab-list"] {
+    background: #0D1220;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 5px;
+    gap: 5px;
+}
+.stTabs [data-baseweb="tab"] {
+    border-radius: 9px;
+    padding: 10px 13px;
+    color: #AAB6CD;
+    font-weight: 700;
+}
+.stTabs [aria-selected="true"] {
+    background: #282348 !important;
+    color: #DCD7FF !important;
+}
+.stButton button, .stDownloadButton button {
+    border-radius: 10px;
+    font-weight: 700;
+    border: 1px solid #51468C;
+    background: linear-gradient(135deg,#7765E8,#5848B7);
+    color: white;
+}
+.stButton button:hover, .stDownloadButton button:hover {
+    border-color: var(--cyan);
+    color: white;
+}
+[data-testid="stFileUploader"] {
+    background: #111827;
+    border: 1px dashed #485573;
+    border-radius: 13px;
+    padding: 12px;
+}
+[data-testid="stDataFrame"] {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+[data-testid="stAlert"] {
+    border-radius: 12px;
+}
+div[data-baseweb="select"] > div {
+    background: #151C2D;
+    border-color: #303A52;
+    color: #F1F5FF;
+}
+hr {
+    border-color: var(--border);
+}
+footer {
+    visibility: hidden;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# =========================================================
+# HEADER
+# =========================================================
+st.markdown("""
+<div class="hero">
+    <div class="eyebrow">AGILE DELIVERY INTELLIGENCE</div>
+    <div class="hero-title">SprintWise AI</div>
+    <div class="hero-copy">
+        Understand sprint performance, delivery velocity, quality signals,
+        blockers, and project risk using your uploaded project data.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# =========================================================
+# SIDEBAR: REAL CSV UPLOAD, NO DEMO MODE
+# =========================================================
 with st.sidebar:
     st.markdown("## 📊 SprintWise AI")
-    st.caption("SPRINT INTELLIGENCE WORKSPACE")
+    st.caption("SPRINT ANALYTICS WORKSPACE")
     st.divider()
-
-    st.markdown("### 01 · Upload dataset")
-
-    uploaded_file = st.file_uploader(
-        "Choose a sprint CSV",
+    st.markdown("### 01 · Upload your data")
+    uploaded = st.file_uploader(
+        "Choose sprint CSV",
         type=["csv"],
-        help="Upload one row per sprint.",
+        help="Upload one row per sprint. No sample data is loaded automatically.",
     )
-
-    with st.expander("Required CSV format"):
-        st.code(", ".join(REQUIRED_COLUMNS), language="text")
-        st.caption(
-            "Sprint names must be unique. Numeric values cannot be negative."
-        )
-
+    with st.expander("Required CSV columns"):
+        st.code(", ".join(REQUIRED), language="text")
     st.divider()
-    st.markdown("### 02 · Analysis filters")
-    st.caption("Filters become available after a file is uploaded.")
+    st.caption("Academic analytics prototype")
 
-    st.markdown("---")
-    st.caption("Academic prototype · Sprint analytics")
-
-
-# =================================== HEADER ==================================
-
-st.markdown(
-    """
-    <div class="hero">
-        <div class="hero-kicker">Agile delivery intelligence</div>
-        <div class="hero-title">SprintWise AI</div>
-        <p class="hero-copy">
-            Turn sprint data into a clear picture of delivery performance,
-            quality signals, blockers, and project risk — in one workspace.
-        </p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
-
-# ============================== UPLOAD LANDING ==============================
-
-if uploaded_file is None:
-    st.markdown("### Start with your sprint data")
+if uploaded is None:
+    st.markdown("### Start your analysis")
     st.write(
-        "Upload a CSV from the left sidebar. "
-        "The dashboard will be generated from your file. "
-        "No sample data is loaded automatically."
+        "Upload your CSV using the sidebar. SprintWise AI will validate "
+        "your file and build the dashboard from your actual data."
     )
-
-    c1, c2, c3 = st.columns(3)
-
-    with c1:
-        st.markdown(
-            """
-            <div class="step-card">
-                <div class="step-num">1</div>
-                <div class="step-title">Upload</div>
-                <div class="step-copy">
-                    Choose your sprint CSV and check its columns.
-                </div>
+    a, b, c = st.columns(3)
+    for col, num, title, description in [
+        (a, "01", "Upload", "Select your sprint dataset."),
+        (b, "02", "Analyze", "Calculate delivery and risk indicators."),
+        (c, "03", "Present", "Explore charts and download results."),
+    ]:
+        with col:
+            st.markdown(f"""
+            <div class="panel">
+                <div class="eyebrow">{num}</div>
+                <h3>{title}</h3>
+                <p>{description}</p>
             </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    with c2:
-        st.markdown(
-            """
-            <div class="step-card">
-                <div class="step-num">2</div>
-                <div class="step-title">Analyze</div>
-                <div class="step-copy">
-                    Calculate completion, velocity, quality, and risk.
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    with c3:
-        st.markdown(
-            """
-            <div class="step-card">
-                <div class="step-num">3</div>
-                <div class="step-title">Present results</div>
-                <div class="step-copy">
-                    Explore charts, read recommendations, and export results.
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
+            """, unsafe_allow_html=True)
     st.stop()
 
-
-# ================================ READ THE CSV ================================
-
+# =========================================================
+# CSV READING AND VALIDATION
+# =========================================================
 try:
-    raw_df = pd.read_csv(uploaded_file)
+    uploaded.seek(0)
+    raw = pd.read_csv(uploaded)
 except Exception as exc:
-    st.error(f"Could not read this CSV file: {exc}")
+    st.error(f"Could not read the CSV file: {exc}")
     st.stop()
 
-clean_df, errors, warnings = validate_and_clean(raw_df)
+raw.columns = [str(col).strip() for col in raw.columns]
 
-if errors:
-    st.error("Please correct the uploaded file before analysis:")
+if raw.columns.duplicated().any():
+    st.error("Your CSV has duplicate column names. Rename the duplicate columns and upload it again.")
+    st.stop()
 
-    for error in errors:
+missing = [col for col in REQUIRED if col not in raw.columns]
+if missing:
+    st.error("Missing required columns: " + ", ".join(missing))
+    st.info("Required columns: " + ", ".join(REQUIRED))
+    st.stop()
+
+df = raw[REQUIRED].copy()
+df["Sprint"] = df["Sprint"].astype("string").str.strip()
+
+if df.empty:
+    st.error("The CSV has no sprint records.")
+    st.stop()
+
+if df["Sprint"].isna().any() or df["Sprint"].eq("").any():
+    st.error("Sprint names cannot be blank.")
+    st.stop()
+
+if df["Sprint"].duplicated().any():
+    duplicates = df.loc[
+        df["Sprint"].duplicated(keep=False), "Sprint"
+    ].unique().tolist()
+    st.error("Sprint names must be unique. Duplicates: " + ", ".join(duplicates))
+    st.stop()
+
+validation_errors = []
+for col in NUMERIC:
+    original = df[col]
+    converted = pd.to_numeric(original, errors="coerce")
+
+    if converted.isna().any():
+        validation_errors.append(f"{col} contains blank or non-numeric values.")
+    elif not np.isfinite(converted.to_numpy(dtype=float)).all():
+        validation_errors.append(f"{col} contains invalid infinite values.")
+    elif (converted < 0).any():
+        validation_errors.append(f"{col} cannot contain negative values.")
+
+    df[col] = converted
+
+if validation_errors:
+    st.error("Please fix these CSV issues:")
+    for error in validation_errors:
         st.write(f"- {error}")
-
-    st.info(
-        "Check the required column names in the sidebar, "
-        "correct the CSV, and upload it again."
-    )
     st.stop()
+
+warnings = []
+
+for col in NUMERIC:
+    if not np.allclose(df[col], np.round(df[col])):
+        warnings.append(f"{col} contains decimal values; values have been rounded to whole numbers.")
+    df[col] = df[col].round().astype(int)
+
+if (df["Planned_Story_Points"] <= 0).any():
+    st.error("Planned_Story_Points must be greater than zero.")
+    st.stop()
+
+if (df["Planned_Tasks"] <= 0).any():
+    st.error("Planned_Tasks must be greater than zero.")
+    st.stop()
+
+if (df["Completed_Story_Points"] > df["Planned_Story_Points"]).any():
+    warnings.append("Completed story points exceed planned points in some rows. Review possible scope changes.")
+if (df["Completed_Tasks"] > df["Planned_Tasks"]).any():
+    warnings.append("Completed tasks exceed planned tasks in some rows. Review possible scope changes.")
+if (df["Blocked_Tasks"] > df["Planned_Tasks"]).any():
+    warnings.append("Blocked tasks exceed planned tasks in some rows. Review the source data.")
 
 for warning in warnings:
     st.warning(warning)
 
-if clean_df.empty:
-    st.error("The uploaded CSV contains no sprint records.")
+st.success(f"CSV validated successfully · {len(df)} sprint records loaded")
+
+st.caption(
+    "Sprint order follows the row order in your CSV. Arrange the rows "
+    "chronologically before uploading so the latest sprint is identified correctly."
+)
+
+# =========================================================
+# FILTERS
+# =========================================================
+st.sidebar.markdown("### 02 · Dashboard filters")
+minimum_completion = st.sidebar.slider(
+    "Minimum completion percentage",
+    min_value=0,
+    max_value=100,
+    value=0,
+    step=5,
+)
+
+# =========================================================
+# METRIC CALCULATIONS
+# =========================================================
+df["Completion_%"] = (
+    df["Completed_Story_Points"] / df["Planned_Story_Points"] * 100
+).clip(upper=100)
+
+df["Task_Completion_%"] = (
+    df["Completed_Tasks"] / df["Planned_Tasks"] * 100
+).clip(upper=100)
+
+df["Velocity"] = df["Completed_Story_Points"]
+
+df["Remaining_Story_Points"] = (
+    df["Planned_Story_Points"] - df["Completed_Story_Points"]
+).clip(lower=0)
+
+df["Risk_Score"] = (
+    (100 - df["Completion_%"]) * 0.45
+    + df["Bugs"] * 4
+    + df["Blocked_Tasks"] * 6
+).clip(0, 100)
+
+def classify_risk(score):
+    if score >= 60:
+        return "High"
+    if score >= 35:
+        return "Medium"
+    return "Low"
+
+df["Risk"] = df["Risk_Score"].apply(classify_risk)
+
+df["Data_Quality"] = np.where(
+    (df["Completed_Story_Points"] > df["Planned_Story_Points"])
+    | (df["Completed_Tasks"] > df["Planned_Tasks"]),
+    "Review over-plan values",
+    "OK",
+)
+
+view = df[df["Completion_%"] >= minimum_completion].copy()
+
+if view.empty:
+    st.warning("No sprints match this completion filter. Lower the threshold.")
     st.stop()
 
-df = calculate_metrics(clean_df)
-
-st.markdown(
-    f'<span class="pill" style="background:#E5F7F1;color:#137A61;">'
-    f'✓ DATA VALIDATED</span> '
-    f'<span style="color:#71809A;font-size:.86rem;">'
-    f'{len(df)} sprint records · '
-    f'{len(REQUIRED_COLUMNS)} source columns</span>',
-    unsafe_allow_html=True,
+latest = view.iloc[-1]
+overall_completion = min(
+    100,
+    view["Completed_Story_Points"].sum()
+    / view["Planned_Story_Points"].sum() * 100,
 )
+average_velocity = view["Velocity"].mean()
+total_bugs = int(view["Bugs"].sum())
+total_blocked = int(view["Blocked_Tasks"].sum())
+high_risk = int((view["Risk"] == "High").sum())
 
-
-# ================================== FILTERS ==================================
-
-with st.sidebar:
-    st.markdown("### 02 · Refine analysis")
-
-    risk_filter = st.multiselect(
-        "Risk categories",
-        RISK_ORDER,
-        default=RISK_ORDER,
-    )
-
-    minimum_completion = st.slider(
-        "Minimum completion",
-        min_value=0,
-        max_value=100,
-        value=0,
-        step=5,
-        format="%d%%",
-    )
-
-view_df = df[
-    df["Risk"].isin(risk_filter)
-    & (df["Completion_%"] >= minimum_completion)
-].copy()
-
-if view_df.empty:
-    st.warning(
-        "No sprints match these filters. "
-        "Adjust the risk categories or completion threshold."
-    )
-    st.stop()
-
-
-# ============================== EXECUTIVE KPIs ==============================
-
-latest = view_df.iloc[-1]
-
-overall_completion = (
-    view_df["Completed_Story_Points"].sum()
-    / view_df["Planned_Story_Points"].sum()
-    * 100
-)
-
-average_velocity = float(view_df["Velocity"].mean())
-total_bugs = int(view_df["Bugs"].sum())
-total_blocked = int(view_df["Blocked_Tasks"].sum())
-high_risk_count = int((view_df["Risk"] == "High").sum())
-
-st.markdown(
-    '<div class="section-eyebrow">Executive snapshot</div>',
-    unsafe_allow_html=True,
-)
-
+# =========================================================
+# KPI CARDS
+# =========================================================
+st.markdown('<div class="eyebrow">EXECUTIVE SNAPSHOT</div>', unsafe_allow_html=True)
 st.markdown("### Sprint performance at a glance")
 
-m1, m2, m3, m4, m5 = st.columns(5)
-
-m1.metric(
-    "Overall completion",
-    f"{overall_completion:.1f}%",
-    help="Completed story points divided by planned story points.",
-)
-
-m2.metric(
-    "Average velocity",
-    f"{average_velocity:.1f} SP",
-    help="Average completed story points per selected sprint.",
-)
-
-m3.metric(
-    "Bugs reported",
-    str(total_bugs),
-    help="Total reported bugs across selected sprints.",
-)
-
-m4.metric(
-    "Blocked tasks",
-    str(total_blocked),
-    help="Total blocked-task reports across selected sprints.",
-)
-
-m5.metric(
-    "High-risk sprints",
-    str(high_risk_count),
-    help="Number of sprints with a risk score of 60 or higher.",
-)
-
-risk_now = str(latest["Risk"])
+k1, k2, k3, k4, k5 = st.columns(5)
+k1.metric("Overall completion", f"{overall_completion:.1f}%")
+k2.metric("Average velocity", f"{average_velocity:.1f} SP")
+k3.metric("Total bugs", total_bugs)
+k4.metric("Blocked tasks", total_blocked)
+k5.metric("High-risk sprints", high_risk)
 
 risk_bg = {
-    "Low": "#E5F7F1",
-    "Medium": "#FFF3D9",
-    "High": "#FDE9E8",
-}[risk_now]
-
+    "Low": "#12372F",
+    "Medium": "#3A2C16",
+    "High": "#401E2A",
+}
 risk_fg = {
-    "Low": "#137A61",
-    "Medium": "#93630B",
-    "High": "#B93838",
-}[risk_now]
+    "Low": "#6BE2BC",
+    "Medium": "#FFD17A",
+    "High": "#FF8FA0",
+}
 
-st.markdown(
-    f'<div class="panel">'
-    f'<div class="panel-label">LATEST SPRINT IN CURRENT VIEW</div>'
-    f'<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">'
-    f'<div class="panel-value">{latest["Sprint"]}</div>'
-    f'<span class="pill" style="background:{risk_bg};color:{risk_fg};">'
-    f'{risk_now.upper()} RISK</span>'
-    f'<span style="color:#71809A;">'
-    f'Completion {latest["Completion_%"]:.1f}% · '
-    f'Velocity {latest["Velocity"]:.0f} SP · '
-    f'Risk score {latest["Risk_Score"]:.1f}/100'
-    f'</span></div></div>',
-    unsafe_allow_html=True,
-)
+st.markdown(f"""
+<div class="panel">
+    <div class="eyebrow">LATEST MATCHING SPRINT · CSV ROW ORDER</div>
+    <h2>{latest['Sprint']}</h2>
+    <span style="background:{risk_bg[latest['Risk']]};
+                 color:{risk_fg[latest['Risk']]};
+                 padding:5px 10px;border-radius:20px;font-weight:800;">
+        {latest['Risk'].upper()} RISK
+    </span>
+    <p>Completion: {latest['Completion_%']:.1f}% ·
+       Velocity: {latest['Velocity']} story points ·
+       Risk score: {latest['Risk_Score']:.1f}/100</p>
+</div>
+""", unsafe_allow_html=True)
 
+# =========================================================
+# PLOTLY CHART STYLE
+# =========================================================
+def style_chart(fig, height=340):
+    fig.update_layout(
+        height=height,
+        paper_bgcolor="#101522",
+        plot_bgcolor="#101522",
+        font=dict(family="DM Sans", color="#C1CADB"),
+        margin=dict(l=15, r=15, t=55, b=15),
+        title_font=dict(family="Manrope", size=16, color="#F1F5FF"),
+        legend=dict(orientation="h", y=1.12, x=0),
+        xaxis=dict(showgrid=False, title=None),
+        yaxis=dict(gridcolor="#252E43", title=None, zeroline=False),
+    )
+    return fig
 
-# ================================= MAIN TABS =================================
-
-(
-    tab_overview,
-    tab_delivery,
-    tab_risk,
-    tab_recs,
-    tab_data,
-    tab_guide,
-) = st.tabs([
+# =========================================================
+# DASHBOARD TABS
+# =========================================================
+overview, delivery, risk_tab, recommendations, data_tab, guide = st.tabs([
     "Overview",
     "Delivery analytics",
     "Risk & quality",
     "Recommendations",
     "Data & export",
-    "Explain this project",
+    "Project guide",
 ])
 
-
-# ================================ OVERVIEW ==================================
-
-with tab_overview:
-    st.markdown("### Performance overview")
-
+with overview:
+    st.markdown("### Delivery overview")
     left, right = st.columns(2)
 
     with left:
         fig = px.line(
-            view_df,
-            x="Sprint",
-            y="Velocity",
-            markers=True,
-            title="Velocity by sprint",
+            view, x="Sprint", y="Velocity",
+            markers=True, title="Sprint velocity",
         )
-
         fig.update_traces(
-            line=dict(color="#3D6FC4", width=3),
-            marker=dict(size=8),
+            line=dict(color="#8B7CFF", width=3),
+            marker=dict(color="#42D9F4", size=8),
         )
-
-        st.plotly_chart(
-            chart_theme(fig),
-            use_container_width=True,
-        )
+        st.plotly_chart(style_chart(fig), use_container_width=True)
 
     with right:
-        plot_df = view_df.melt(
+        points = view.melt(
             id_vars="Sprint",
-            value_vars=[
-                "Planned_Story_Points",
-                "Completed_Story_Points",
-            ],
-            var_name="Series",
+            value_vars=["Planned_Story_Points", "Completed_Story_Points"],
+            var_name="Type",
             value_name="Story points",
         )
-
         fig = px.bar(
-            plot_df,
-            x="Sprint",
-            y="Story points",
-            color="Series",
-            barmode="group",
+            points, x="Sprint", y="Story points",
+            color="Type", barmode="group",
             title="Planned vs completed story points",
             color_discrete_map={
-                "Planned_Story_Points": "#C7D4E8",
-                "Completed_Story_Points": "#3D6FC4",
+                "Planned_Story_Points": "#56617A",
+                "Completed_Story_Points": "#8B7CFF",
             },
         )
-
-        st.plotly_chart(
-            chart_theme(fig),
-            use_container_width=True,
-        )
+        st.plotly_chart(style_chart(fig), use_container_width=True)
 
     left, right = st.columns(2)
-
     with left:
         fig = px.line(
-            view_df,
-            x="Sprint",
-            y="Completion_%",
-            markers=True,
-            title="Story-point completion trend",
+            view, x="Sprint", y="Completion_%",
+            markers=True, title="Completion trend",
         )
-
-        fig.update_traces(
-            line=dict(color="#16A085", width=3),
-            marker=dict(size=8),
-        )
-
+        fig.update_traces(line=dict(color="#35D0A0", width=3))
         fig.add_hline(
-            y=80,
-            line_dash="dash",
-            line_color="#E6A23C",
+            y=80, line_dash="dash", line_color="#F6BD60",
             annotation_text="80% reference",
         )
-
-        st.plotly_chart(
-            chart_theme(fig),
-            use_container_width=True,
-        )
+        st.plotly_chart(style_chart(fig), use_container_width=True)
 
     with right:
-        quality = view_df.melt(
+        quality = view.melt(
             id_vars="Sprint",
             value_vars=["Bugs", "Blocked_Tasks"],
             var_name="Indicator",
             value_name="Count",
         )
-
         fig = px.bar(
-            quality,
-            x="Sprint",
-            y="Count",
-            color="Indicator",
-            barmode="group",
-            title="Quality and blocker signals",
+            quality, x="Sprint", y="Count",
+            color="Indicator", barmode="group",
+            title="Bugs and blocked tasks",
             color_discrete_map={
-                "Bugs": "#E05D5D",
-                "Blocked_Tasks": "#E6A23C",
+                "Bugs": "#FF6B81",
+                "Blocked_Tasks": "#F6BD60",
             },
         )
+        st.plotly_chart(style_chart(fig), use_container_width=True)
 
-        st.plotly_chart(
-            chart_theme(fig),
-            use_container_width=True,
-        )
-
-    st.markdown("### What stands out")
-
+    st.markdown("### Key observations")
     if overall_completion < 80:
-        st.warning(
-            f"Overall completion is {overall_completion:.1f}%, "
-            "below the 80% reference threshold."
-        )
+        st.warning("Overall completion is below the 80% reference threshold.")
     else:
-        st.success(
-            f"Overall completion is {overall_completion:.1f}%, "
-            "meeting or exceeding the 80% reference threshold."
-        )
+        st.success("Overall completion meets or exceeds the 80% reference threshold.")
 
-    if high_risk_count:
-        st.warning(
-            f"{high_risk_count} selected sprint(s) have a high "
-            "rule-based risk score."
-        )
+    if high_risk:
+        st.warning(f"{high_risk} sprint(s) have high rule-based risk scores.")
     else:
-        st.info(
-            "No selected sprint is classified as high risk "
-            "by the current scoring rules."
-        )
+        st.info("No selected sprint has a high rule-based risk score.")
 
-    if total_blocked:
-        st.info(
-            f"There are {total_blocked} blocked-task reports "
-            "across the selected sprints."
-        )
-
-
-# ============================ DELIVERY ANALYTICS ============================
-
-with tab_delivery:
+with delivery:
     st.markdown("### Delivery analytics")
-
     left, right = st.columns(2)
 
     with left:
-        task_fig = px.bar(
-            view_df,
-            x="Sprint",
-            y="Task_Completion_%",
+        fig = px.bar(
+            view, x="Sprint", y="Task_Completion_%",
             title="Task completion by sprint",
         )
-
-        task_fig.update_traces(marker_color="#6C8FD7")
-
-        task_fig.add_hline(
-            y=80,
-            line_dash="dash",
-            line_color="#E6A23C",
-        )
-
-        st.plotly_chart(
-            chart_theme(task_fig),
-            use_container_width=True,
-        )
+        fig.update_traces(marker_color="#8B7CFF")
+        fig.add_hline(y=80, line_dash="dash", line_color="#F6BD60")
+        st.plotly_chart(style_chart(fig), use_container_width=True)
 
     with right:
-        completion_gap = view_df.copy()
-
-        completion_gap["Uncompleted_Story_Points"] = (
-            completion_gap["Planned_Story_Points"]
-            - completion_gap["Completed_Story_Points"]
-        ).clip(lower=0)
-
-        gap_fig = px.bar(
-            completion_gap,
-            x="Sprint",
-            y="Uncompleted_Story_Points",
+        fig = px.bar(
+            view, x="Sprint", y="Remaining_Story_Points",
             title="Remaining planned story points",
         )
+        fig.update_traces(marker_color="#42D9F4")
+        st.plotly_chart(style_chart(fig), use_container_width=True)
 
-        gap_fig.update_traces(marker_color="#8C9BB5")
-
-        st.plotly_chart(
-            chart_theme(gap_fig),
-            use_container_width=True,
-        )
-
-    st.markdown("#### Sprint-by-sprint delivery table")
-
-    delivery_cols = [
-        "Sprint",
-        "Planned_Story_Points",
-        "Completed_Story_Points",
-        "Completion_%",
-        "Planned_Tasks",
-        "Completed_Tasks",
-        "Task_Completion_%",
-        "Velocity",
+    st.markdown("#### Sprint delivery table")
+    cols = [
+        "Sprint", "Planned_Story_Points", "Completed_Story_Points",
+        "Completion_%", "Planned_Tasks", "Completed_Tasks",
+        "Task_Completion_%", "Velocity", "Data_Quality",
     ]
+    st.dataframe(view[cols].round(1), use_container_width=True, hide_index=True)
 
-    st.dataframe(
-        view_df[delivery_cols].round(1),
-        use_container_width=True,
-        hide_index=True,
-    )
-
-
-# ============================== RISK & QUALITY ==============================
-
-with tab_risk:
+with risk_tab:
     st.markdown("### Risk and quality analysis")
-
     left, right = st.columns([1.3, 1])
 
     with left:
         fig = px.bar(
-            view_df,
-            x="Sprint",
-            y="Risk_Score",
-            color="Risk",
-            category_orders={"Risk": RISK_ORDER},
+            view, x="Sprint", y="Risk_Score", color="Risk",
             color_discrete_map=RISK_COLORS,
-            hover_data=[
-                "Completion_%",
-                "Bugs",
-                "Blocked_Tasks",
-            ],
+            hover_data=["Completion_%", "Bugs", "Blocked_Tasks"],
             range_y=[0, 100],
-            title="Rule-based risk score by sprint",
+            title="Rule-based sprint risk score",
         )
-
-        st.plotly_chart(
-            chart_theme(fig),
-            use_container_width=True,
-        )
+        st.plotly_chart(style_chart(fig), use_container_width=True)
 
     with right:
-        risk_counts = (
-            view_df["Risk"]
-            .value_counts()
-            .reindex(RISK_ORDER, fill_value=0)
-            .reset_index()
+        counts = (
+            view["Risk"].value_counts()
+            .reindex(["Low", "Medium", "High"], fill_value=0)
+            .rename_axis("Risk")
+            .reset_index(name="Sprints")
         )
-
-        risk_counts.columns = ["Risk", "Sprint count"]
-
         fig = px.pie(
-            risk_counts,
-            names="Risk",
-            values="Sprint count",
-            hole=0.66,
-            color="Risk",
+            counts, names="Risk", values="Sprints",
+            color="Risk", hole=0.62,
             color_discrete_map=RISK_COLORS,
             title="Risk category distribution",
         )
-
-        fig.update_traces(
-            textposition="inside",
-            textinfo="percent+label",
-        )
-
-        st.plotly_chart(
-            chart_theme(fig),
-            use_container_width=True,
-        )
+        fig.update_traces(textinfo="percent+label")
+        st.plotly_chart(style_chart(fig), use_container_width=True)
 
     st.info(
-        "Risk score is a transparent heuristic, not a calibrated "
-        "failure probability. Score = 0.45 × completion shortfall "
-        "+ 4 × bugs + 6 × blocked tasks, capped at 100. "
-        "Low: below 35; Medium: 35–59.9; High: 60 or above."
+        "Risk formula: 0.45 × (100 − completion %) + 4 × bugs + "
+        "6 × blocked tasks, capped at 100. Low: below 35; "
+        "Medium: 35–59.9; High: 60 or above. This is a heuristic score, "
+        "not a calibrated probability of sprint failure."
     )
-
-    risk_cols = [
-        "Sprint",
-        "Completion_%",
-        "Bugs",
-        "Blocked_Tasks",
-        "Risk_Score",
-        "Risk",
-    ]
-
     st.dataframe(
-        view_df[risk_cols].round(1),
+        view[[
+            "Sprint", "Completion_%", "Bugs", "Blocked_Tasks",
+            "Risk_Score", "Risk", "Data_Quality",
+        ]].round(1),
         use_container_width=True,
         hide_index=True,
     )
 
+# =========================================================
+# RECOMMENDATIONS
+# =========================================================
+def make_recommendations(row, avg_velocity):
+    result = []
 
-# =========================== RECOMMENDATIONS ================================
+    if row["Completion_%"] < 80:
+        result.append((
+            "DELIVERY",
+            "Completion is below 80%. Review unfinished stories and reconsider sprint scope.",
+        ))
+    if row["Bugs"] >= 5:
+        result.append((
+            "QUALITY",
+            "Bug count is elevated. Investigate recurring defects and reserve time for fixes and regression testing.",
+        ))
+    if row["Blocked_Tasks"] >= 3:
+        result.append((
+            "DEPENDENCIES",
+            "Several tasks are blocked. Identify dependencies, assign owners, and agree on resolution dates.",
+        ))
+    if row["Velocity"] < avg_velocity:
+        result.append((
+            "VELOCITY",
+            "Velocity is below the selected-sprint average. Review capacity, unplanned work, and dependency delays.",
+        ))
+    if row["Task_Completion_%"] < 80:
+        result.append((
+            "PLANNING",
+            "Task completion is below 80%. Break large stories into smaller tasks and clarify acceptance criteria.",
+        ))
+    if not result:
+        result.append((
+            "STABLE",
+            "Current indicators are relatively stable. Continue monitoring delivery, bugs, and blockers.",
+        ))
+    return result
 
-with tab_recs:
+with recommendations:
     st.markdown("### Actionable recommendations")
-
     st.caption(
-        "Recommendations are based on the latest sprint in the current view: "
-        f"{latest['Sprint']}."
+        f"Based on {latest['Sprint']}, the last matching row in your CSV."
     )
 
-    for category, recommendation in recommendations_for(
-        latest,
-        average_velocity,
-    ):
-        st.markdown(
-            f'<div class="panel">'
-            f'<div class="section-eyebrow">{category}</div>'
-            f'<div style="color:#25334D;font-weight:600;">'
-            f'{recommendation}</div></div>',
-            unsafe_allow_html=True,
-        )
+    for category, message in make_recommendations(latest, average_velocity):
+        st.markdown(f"""
+        <div class="panel">
+            <div class="eyebrow">{category}</div>
+            <p style="font-size:1rem;color:#E1E7F4">{message}</p>
+        </div>
+        """, unsafe_allow_html=True)
 
-    st.markdown("### Recommendations for each sprint")
-
-    for _, row in view_df.iterrows():
+    st.markdown("### Recommendations by sprint")
+    for _, row in view.iterrows():
         with st.expander(
             f"{row['Sprint']} · {row['Risk']} risk · "
             f"{row['Completion_%']:.1f}% completion"
         ):
-            for category, recommendation in recommendations_for(
-                row,
-                average_velocity,
-            ):
-                st.markdown(
-                    f"**{category}:** {recommendation}"
-                )
+            for category, message in make_recommendations(row, average_velocity):
+                st.write(f"**{category}:** {message}")
 
-
-# =============================== DATA & EXPORT ==============================
-
-with tab_data:
-    st.markdown("### Uploaded and analyzed data")
-
-    st.caption(
-        "The table includes calculated metrics. "
-        "Download the filtered analysis or cleaned source data."
-    )
-
-    st.dataframe(
-        view_df.round(2),
-        use_container_width=True,
-        hide_index=True,
-    )
+# =========================================================
+# DATA TABLE AND DOWNLOADS
+# =========================================================
+with data_tab:
+    st.markdown("### Analyzed sprint data")
+    st.dataframe(view.round(2), use_container_width=True, hide_index=True)
 
     st.download_button(
-        "⬇️ Download analyzed CSV",
-        data=view_df.to_csv(index=False).encode("utf-8"),
+        "⬇ Download analyzed CSV",
+        data=view.to_csv(index=False).encode("utf-8"),
         file_name="sprintwise_analysis.csv",
         mime="text/csv",
     )
 
     st.download_button(
-        "⬇️ Download cleaned source CSV",
-        data=clean_df.to_csv(index=False).encode("utf-8"),
+        "⬇ Download cleaned source CSV",
+        data=df[REQUIRED].to_csv(index=False).encode("utf-8"),
         file_name="sprintwise_cleaned_source.csv",
         mime="text/csv",
     )
 
-
-# ============================= PROJECT EXPLANATION ==========================
-
-with tab_guide:
-    st.markdown("### How to explain SprintWise AI to faculty")
-
-    st.markdown("#### Project objective")
-
+# =========================================================
+# FACULTY PRESENTATION GUIDE
+# =========================================================
+with guide:
+    st.markdown("### Explain the project")
+    st.markdown("#### Objective")
     st.write(
-        "SprintWise AI is a sprint analytics dashboard that transforms "
-        "project-management CSV data into delivery metrics, risk indicators, "
-        "visual summaries, and practical recommendations."
+        "SprintWise AI transforms sprint CSV data into project delivery "
+        "metrics, risk indicators, charts, and actionable recommendations."
     )
 
     st.markdown("#### Processing pipeline")
-
     st.code(
         "CSV upload → validation → metric calculation → risk scoring "
-        "→ visual analytics → recommendations → CSV export",
+        "→ interactive dashboard → recommendations → CSV export",
         language="text",
     )
 
-    st.markdown("#### Key formulas")
-
+    st.markdown("#### Core formulas")
     st.latex(
-        r"\text{Completion (\%)} = "
+        r"\text{Completion (\%)}="
         r"\frac{\text{Completed Story Points}}"
-        r"{\text{Planned Story Points}} \times 100"
+        r"{\text{Planned Story Points}}\times100"
     )
-
     st.latex(
-        r"\text{Task Completion (\%)} = "
-        r"\frac{\text{Completed Tasks}}"
-        r"{\text{Planned Tasks}} \times 100"
+        r"\text{Task Completion (\%)}="
+        r"\frac{\text{Completed Tasks}}{\text{Planned Tasks}}\times100"
     )
-
     st.latex(
-        r"\text{Risk} = \min\left(100,\;"
-        r"0.45(100-\text{Completion})"
-        r"+4(\text{Bugs})+6(\text{Blocked Tasks})\right)"
+        r"\text{Risk}=\min(100,\;"
+        r"0.45(100-\text{Completion})+4(\text{Bugs})"
+        r"+6(\text{Blocked Tasks}))"
     )
 
-    st.markdown("#### Important AI limitation")
-
+    st.markdown("#### Important limitation")
     st.warning(
-        "This version uses a rule-based risk score and "
-        "rule-triggered recommendations. It does not claim a validated "
-        "machine-learning prediction. A genuine predictive model requires "
-        "historical sprint records with independently recorded outcomes, "
-        "a held-out test set, and evaluation metrics."
+        "This version uses a rule-based risk score and threshold-based "
+        "recommendations. It does not contain a trained Random Forest model. "
+        "A real predictive model needs historical sprint records with "
+        "independently recorded outcomes and evaluation on held-out data."
     )
 
-    st.markdown("#### Suggested live-demo sequence")
-
-    st.markdown(
-        """
-        1. Upload a prepared CSV containing multiple sprint records.
-        2. Show the validation status and KPI cards.
-        3. Compare velocity and completion charts.
-        4. Open Risk & quality and explain the risk formula.
-        5. Open Recommendations and connect each suggestion to the data.
-        6. Download the analyzed CSV to demonstrate the output workflow.
-        """
+    st.markdown("#### Suggested live demonstration")
+    st.write(
+        "1. Upload a CSV with several sprint records.\n"
+        "2. Explain the data validation status and KPI cards.\n"
+        "3. Compare velocity and completion charts.\n"
+        "4. Explain the risk score and risk categories.\n"
+        "5. Show recommendations linked to sprint metrics.\n"
+        "6. Download the analyzed CSV."
     )
-
-
-# ================================= FOOTER ===================================
 
 st.divider()
-
 st.caption(
-    "SprintWise AI · Academic prototype · "
-    "Findings depend on the accuracy and completeness of the uploaded data."
+    "SprintWise AI · Academic prototype · Analysis depends on the "
+    "accuracy and completeness of uploaded data."
 )
